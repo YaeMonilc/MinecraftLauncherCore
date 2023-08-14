@@ -66,7 +66,6 @@ class LaunchCommandBuilder(
                 library.rules?.any { (it.os?.name == config.os && it.action == "allow") ||
                         (it.action == "disallow" && it.os?.name != config.os) } ?: false || library.rules == null
             }.forEach { library ->
-                println(library.name)
                 library.downloads.artifact?.let {
                     librariesString.append("$minecraftPath\\libraries\\${it.path};")
                 }
@@ -115,7 +114,6 @@ class LaunchCommandBuilder(
                 library.rules?.any { (it.os?.name == config.os && it.action == "allow") ||
                         (it.action == "disallow" && it.os?.name != config.os) } ?: false || library.rules == null
             }.forEach { library ->
-                println(library.name)
                 library.downloads.artifact?.let {
                     librariesString.append("$minecraftPath\\libraries\\${it.path};")
                 }
