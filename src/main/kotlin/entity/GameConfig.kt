@@ -1,3 +1,7 @@
+package entity
+
+import entity.VersionJson
+import utils.MinecraftPath
 import java.io.File
 
 /**
@@ -6,9 +10,8 @@ import java.io.File
  */
 class GameConfig internal constructor(){
     internal lateinit var javaPath: File
-    internal lateinit var minecraftPath: File
-    internal lateinit var versionJsonFile: File
-    internal lateinit var versionJson: Any
+    internal lateinit var minecraftPath: MinecraftPath
+    internal lateinit var versionJson: VersionJson
     internal lateinit var charset: String
     internal lateinit var os: String
 }

@@ -18,8 +18,6 @@ class LaunchCommandBuilder(
     init {
         launchCommand.os = config.os
 
-        val minecraftPath = "${config.minecraftPath}\\.minecraft"
-
         jvmArgs.add("-Xmx${memorySetting.max}m")
         jvmArgs.add("-Xmn${memorySetting.min}m")
         jvmArgs.add("-Dfile.encoding=${config.charset}")
@@ -43,102 +41,53 @@ class LaunchCommandBuilder(
         jvmArgs.add("-Dminecraft.launcher.brand=${launcherConfig.name}")
         jvmArgs.add("-Dminecraft.launcher.version=${launcherConfig.version}")
 
-        if (config.versionJson is VersionJson) {
-            val versionJson = config.versionJson as VersionJson
-            val versionPath = "$minecraftPath\\versions\\${versionJson.id}"
-            val gameJar = "$versionPath\\${versionJson.id}.jar"
+        val versionJson = config.versionJson
+        val versionPath = config.minecraftPath.getVersion(versionJson.id).absolutePath
+        val gameJar = File(versionPath, "${versionJson.id}.jar").absolutePath
+        val nativesPath = File(versionPath, "/natives").absolutePath
 
-            jvmArgs.add("-Djava.library.path=$versionPath\\natives")
-            jvmArgs.add("-Djna.tmpdir=$versionPath\\natives")
-            jvmArgs.add("-Dorg.lwjgl.system.SharedLibraryExtractPath=$versionPath\\natives")
-            jvmArgs.add("-Dio.netty.native.workdir=$versionPath\\natives")
+        jvmArgs.add("-Djava.library.path=$nativesPath")
+        jvmArgs.add("-Djna.tmpdir=$nativesPath")
+        jvmArgs.add("-Dorg.lwjgl.system.SharedLibraryExtractPath=$nativesPath")
+        jvmArgs.add("-Dio.netty.native.workdir=$nativesPath")
 
-            val loggingFile = File("$versionPath\\log4j2.xml")
-            if (loggingFile.exists()) {
-                jvmArgs.add("-Dlog4j2.formatMsgNoLookups=true")
-                jvmArgs.add("-Dlog4j.configurationFile=${loggingFile.absolutePath}")
-            }
-
-            jvmArgs.add("-Dminecraft.client.jar=$gameJar")
-
-            val librariesString = StringBuilder()
-            versionJson.libraries.filter { library ->
-                library.rules?.any { (it.os?.name == config.os && it.action == "allow") ||
-                        (it.action == "disallow" && it.os?.name != config.os) } ?: false || library.rules == null
-            }.forEach { library ->
-                library.downloads.artifact?.let {
-                    librariesString.append("$minecraftPath\\libraries\\${it.path};")
-                }
-                library.downloads.classifiers?.let { classifiers ->
-                    val artifact = when(config.os) {
-                        OS.LINUX -> classifiers.nativesLinux
-                        OS.OSX -> classifiers.nativesOSX
-                        OS.WNIDOWS -> classifiers.nativesWindows
-                        else -> null
-                    }
-                    artifact?.let {
-                        librariesString.append("$minecraftPath\\libraries\\${it.path};")
-                    }
-                }
-            }
-            jvmArgs.add("-cp")
-            jvmArgs.add("$librariesString$gameJar")
-
-            jvmArgs.add(versionJson.mainClass)
-
-            minecraftArgs["--version"] = versionJson.id
-            minecraftArgs["--gameDir"] = versionPath
-            minecraftArgs["--assetsDir"] = "$minecraftPath\\assets"
-            minecraftArgs["--assetIndex"] = versionJson.assetIndex.id
+        val loggingFile = File(versionPath, "log4j2.xml")
+        if (loggingFile.exists()) {
+            jvmArgs.add("-Dlog4j2.formatMsgNoLookups=true")
+            jvmArgs.add("-Dlog4j.configurationFile=${loggingFile.absolutePath}")
         }
-        else if (config.versionJson is VersionJsonOld) {
-            val versionJson = config.versionJson as VersionJsonOld
-            val versionPath = "$minecraftPath\\versions\\${versionJson.id}"
-            val gameJar = "$versionPath\\${versionJson.id}.jar"
 
-            jvmArgs.add("-Djava.library.path=$versionPath\\natives")
-            jvmArgs.add("-Djna.tmpdir=$versionPath\\natives")
-            jvmArgs.add("-Dorg.lwjgl.system.SharedLibraryExtractPath=$versionPath\\natives")
-            jvmArgs.add("-Dio.netty.native.workdir=$versionPath\\natives")
+        jvmArgs.add("-Dminecraft.client.jar=$gameJar")
 
-            val loggingFile = File("$versionPath\\log4j2.xml")
-            if (loggingFile.exists()) {
-                jvmArgs.add("-Dlog4j2.formatMsgNoLookups=true")
-                jvmArgs.add("-Dlog4j.configurationFile=${loggingFile.absolutePath}")
+        val librariesString = StringBuilder()
+        versionJson.libraries.filter { library ->
+            library.rules?.any { (it.os?.name == config.os && it.action == "allow") ||
+                    (it.action == "disallow" && it.os?.name != config.os) } ?: false || library.rules == null
+        }.forEach { library ->
+            library.downloads.artifact?.let {
+                librariesString.append("${File(config.minecraftPath.getLibraries(), it.path).absolutePath};")
             }
-
-            jvmArgs.add("-Dminecraft.client.jar=$gameJar")
-
-            val librariesString = StringBuilder()
-            versionJson.libraries.filter { library ->
-                library.rules?.any { (it.os?.name == config.os && it.action == "allow") ||
-                        (it.action == "disallow" && it.os?.name != config.os) } ?: false || library.rules == null
-            }.forEach { library ->
-                library.downloads.artifact?.let {
-                    librariesString.append("$minecraftPath\\libraries\\${it.path};")
+            library.downloads.classifiers?.let { classifiers ->
+                val artifact = when(config.os) {
+                    OS.LINUX -> classifiers.nativesLinux
+                    OS.OSX -> classifiers.nativesOSX
+                    OS.WNIDOWS -> classifiers.nativesWindows
+                    else -> null
                 }
-                library.downloads.classifiers?.let { classifiers ->
-                    val artifact = when(config.os) {
-                        OS.LINUX -> classifiers.nativesLinux
-                        OS.OSX -> classifiers.nativesOSX
-                        OS.WNIDOWS -> classifiers.nativesWindows
-                        else -> null
-                    }
-                    artifact?.let {
-                        librariesString.append("$minecraftPath\\libraries\\${it.path};")
-                    }
+                artifact?.let {
+                    librariesString.append("${File(config.minecraftPath.getLibraries(), it.path).absolutePath};")
                 }
             }
-            jvmArgs.add("-cp")
-            jvmArgs.add("$librariesString$gameJar")
-
-            jvmArgs.add(versionJson.mainClass)
-
-            minecraftArgs["--version"] = versionJson.id
-            minecraftArgs["--gameDir"] = versionPath
-            minecraftArgs["--assetsDir"] = "$minecraftPath\\assets"
-            minecraftArgs["--assetIndex"] = versionJson.assetIndex.id
         }
+        jvmArgs.add("-cp")
+        jvmArgs.add("$librariesString$gameJar")
+
+        jvmArgs.add(versionJson.mainClass)
+
+        minecraftArgs["--version"] = versionJson.id
+        minecraftArgs["--gameDir"] = versionPath
+        minecraftArgs["--assetsDir"] = config.minecraftPath.getAssets().absolutePath
+        minecraftArgs["--assetIndex"] = versionJson.assetIndex.id
 
         minecraftArgs["--username"] = user.name
         minecraftArgs["--uuid"] = user.authUUID
@@ -149,7 +98,7 @@ class LaunchCommandBuilder(
 
     /**
      * @author YaeMonilc
-     * @return LaunchCommand
+     * @return entity.LaunchCommand
      */
     fun build(): LaunchCommand {
         val command = StringBuilder()

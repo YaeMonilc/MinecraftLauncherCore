@@ -1,4 +1,4 @@
-
+package entity
 /**
  * @author YaeMonilc
  * @see LaunchCommandBuilder

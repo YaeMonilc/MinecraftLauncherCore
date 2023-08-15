@@ -1,12 +1,13 @@
 import com.google.gson.GsonBuilder
+import entity.GameConfig
 import entity.VersionJson
-import entity.VersionJsonOld
 import exception.VersionJsonError
 import exception.VersionJsonNotFound
+import utils.MinecraftPath
 import java.io.File
 
 /**
- * The GameConfig Object Builder
+ * The entity.GameConfig Object Builder
  * @author YaeMonilc
  */
 class GameConfigBuilder(
@@ -20,8 +21,7 @@ class GameConfigBuilder(
 
     init {
         gameConfig.javaPath = javaPath
-        gameConfig.minecraftPath = minecraftPath //C:\Users\Administrator\Desktop\MC\
-        gameConfig.versionJsonFile = File(gameConfig.minecraftPath, ".minecraft\\versions\\$version\\$version.json")
+        gameConfig.minecraftPath = MinecraftPath(minecraftPath)
         gameConfig.charset = charset
         gameConfig.os = os
     }
@@ -30,24 +30,11 @@ class GameConfigBuilder(
      * @author YaeMonilc
      * @exception VersionJsonNotFound
      * @exception VersionJsonError
-     * @return GameConfig
+     * @return entity.GameConfig
      */
     @Throws(VersionJsonNotFound::class, VersionJsonError::class)
     fun build(): GameConfig {
-        if (!gameConfig.versionJsonFile.exists())
-            throw VersionJsonNotFound("$version.json not found")
-
-        val versionJsonString = readFileString(gameConfig.versionJsonFile)
-        if (versionJsonString.isBlank())
-            throw VersionJsonError("read $version.json error")
-
-        val gson = GsonBuilder().create()
-        gameConfig.versionJson =
-        if (versionJsonString.contains("arguments"))
-            gson.fromJson(versionJsonString, VersionJson::class.java)
-        else
-            gson.fromJson(versionJsonString, VersionJsonOld::class.java)
-
+        gameConfig.versionJson = VersionJson.fromFile(gameConfig.minecraftPath, version)
         return gameConfig
     }
 
