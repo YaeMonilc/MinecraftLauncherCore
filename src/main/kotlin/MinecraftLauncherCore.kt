@@ -1,4 +1,5 @@
 import entity.LaunchCommand
+import entity.OS
 import java.util.Scanner
 
 /**
@@ -9,8 +10,21 @@ class MinecraftLauncherCore(
     private val launchCommand: LaunchCommand
 ) {
     fun launch() {
-        val processBuilder = ProcessBuilder("powershell.exe", launchCommand.command)
-        val process = processBuilder.start()
+
+        val process: Process = when(launchCommand.os) {
+            OS.WNIDOWS -> {
+                val processBuilder = ProcessBuilder("powershell.exe", launchCommand.command)
+                processBuilder.start()
+            }
+
+            OS.LINUX -> {
+                Runtime.getRuntime().exec(launchCommand.command)
+            }
+
+            else -> return
+        }
+
+
         val scanner = Scanner(process.inputStream)
 
         while (scanner.hasNext()) {
