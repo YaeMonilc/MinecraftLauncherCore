@@ -1,4 +1,3 @@
-import com.google.gson.GsonBuilder
 import entity.GameConfig
 import entity.VersionJson
 import exception.VersionJsonError
@@ -6,10 +5,6 @@ import exception.VersionJsonNotFound
 import utils.MinecraftPath
 import java.io.File
 
-/**
- * The entity.GameConfig Object Builder
- * @author YaeMonilc
- */
 class GameConfigBuilder(
     val javaPath: File,
     val minecraftPath: File,
@@ -26,12 +21,6 @@ class GameConfigBuilder(
         gameConfig.os = os
     }
 
-    /**
-     * @author YaeMonilc
-     * @exception VersionJsonNotFound
-     * @exception VersionJsonError
-     * @return entity.GameConfig
-     */
     @Throws(VersionJsonNotFound::class, VersionJsonError::class)
     fun build(): GameConfig {
         gameConfig.versionJson = VersionJson.fromFile(gameConfig.minecraftPath, version)

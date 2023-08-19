@@ -1,6 +1,5 @@
 package entity
 
-import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import exception.VersionJsonError
 import exception.VersionJsonNotFound

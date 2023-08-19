@@ -1,12 +1,8 @@
 import entity.*
 import java.io.File
 
-/**
- * The Launch Command Object Builder
- * @author YaeMonilc
- */
 class LaunchCommandBuilder(
-    val config: GameConfig,
+    val gameConfig: GameConfig,
     val user: User,
     val memorySetting: MemorySetting = MemorySetting(),
     val launcherConfig: LauncherConfig = LauncherConfig()
@@ -16,13 +12,13 @@ class LaunchCommandBuilder(
     private val minecraftArgs: LinkedHashMap<String, String> = LinkedHashMap()
 
     init {
-        launchCommand.os = config.os
+        launchCommand.os = gameConfig.os
 
         jvmArgs.add("-Xmx${memorySetting.max}m")
         jvmArgs.add("-Xmn${memorySetting.min}m")
-        jvmArgs.add("-Dfile.encoding=${config.charset}")
-        jvmArgs.add("-Dsun.stdout.encoding=${config.charset}")
-        jvmArgs.add("-Dsun.stderr.encoding=${config.charset}")
+        jvmArgs.add("-Dfile.encoding=${gameConfig.charset}")
+        jvmArgs.add("-Dsun.stdout.encoding=${gameConfig.charset}")
+        jvmArgs.add("-Dsun.stderr.encoding=${gameConfig.charset}")
         jvmArgs.add("-Djava.rmi.server.useCodebaseOnly=true")
         jvmArgs.add("-Dcom.sun.jndi.rmi.object.trustURLCodebase=false")
         jvmArgs.add("-Dcom.sun.jndi.cosnaming.object.trustURLCodebase=false")
@@ -41,8 +37,8 @@ class LaunchCommandBuilder(
         jvmArgs.add("-Dminecraft.launcher.brand=${launcherConfig.name}")
         jvmArgs.add("-Dminecraft.launcher.version=${launcherConfig.version}")
 
-        val versionJson = config.versionJson
-        val versionPath = config.minecraftPath.getVersion(versionJson.id).absolutePath
+        val versionJson = gameConfig.versionJson
+        val versionPath = gameConfig.minecraftPath.getVersion(versionJson.id).absolutePath
         val gameJar = File(versionPath, "${versionJson.id}.jar").absolutePath
         val nativesPath = File(versionPath, "/natives").absolutePath
 
@@ -61,21 +57,21 @@ class LaunchCommandBuilder(
 
         val librariesString = StringBuilder()
         versionJson.libraries.filter { library ->
-            library.rules?.any { (it.os?.name == config.os && it.action == "allow") ||
-                    (it.action == "disallow" && it.os?.name != config.os) } ?: false || library.rules == null
+            library.rules?.any { (it.os?.name == gameConfig.os && it.action == "allow") ||
+                    (it.action == "disallow" && it.os?.name != gameConfig.os) } ?: false || library.rules == null
         }.forEach { library ->
             library.downloads.artifact?.let {
-                librariesString.append("${File(config.minecraftPath.getLibraries(), it.path).absolutePath};")
+                librariesString.append("${File(gameConfig.minecraftPath.getLibraries(), it.path).absolutePath};")
             }
             library.downloads.classifiers?.let { classifiers ->
-                val artifact = when(config.os) {
+                val artifact = when(gameConfig.os) {
                     OS.LINUX -> classifiers.nativesLinux
                     OS.OSX -> classifiers.nativesOSX
                     OS.WNIDOWS -> classifiers.nativesWindows
                     else -> null
                 }
                 artifact?.let {
-                    librariesString.append("${File(config.minecraftPath.getLibraries(), it.path).absolutePath};")
+                    librariesString.append("${File(gameConfig.minecraftPath.getLibraries(), it.path).absolutePath};")
                 }
             }
         }
@@ -86,7 +82,7 @@ class LaunchCommandBuilder(
 
         minecraftArgs["--version"] = versionJson.id
         minecraftArgs["--gameDir"] = versionPath
-        minecraftArgs["--assetsDir"] = config.minecraftPath.getAssets().absolutePath
+        minecraftArgs["--assetsDir"] = gameConfig.minecraftPath.getAssets().absolutePath
         minecraftArgs["--assetIndex"] = versionJson.assetIndex.id
 
         minecraftArgs["--username"] = user.name
@@ -96,17 +92,13 @@ class LaunchCommandBuilder(
         minecraftArgs["--versionType"] = "${launcherConfig.name} ${launcherConfig.version}"
     }
 
-    /**
-     * @author YaeMonilc
-     * @return entity.LaunchCommand
-     */
     fun build(): LaunchCommand {
         val command = StringBuilder()
-        command.append(config.javaPath)
+        command.append(gameConfig.javaPath)
         jvmArgs.forEach {
             command.append(" '$it'")
         }
-        minecraftArgs.forEach { t, u ->
+        minecraftArgs.forEach { (t, u) ->
             command.append("${if (t.isBlank()) "" else " '$t'"} '$u'")
         }
         launchCommand.command = command.toString()
